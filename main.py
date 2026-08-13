@@ -27,7 +27,7 @@ def show_alerts(ip, username, count, severity):
     print("Severity:", severity)
     print("Source IP:", ip)
     print("Target username:", username)
-    print("Failed attempts:", count)
+    print("Failed attempts before success:", count)
     print("================================")
 
     # Save human-readable alert
@@ -40,7 +40,7 @@ Alert type: Possible brute-force attack
 Severity: {severity}
 Source IP: {ip}
 Target username: {username}
-Failed attempts: {count}
+Failed attempts before success: {count}
 ================================
 
 """
@@ -70,9 +70,11 @@ suspicious_users = {
 # Storage
 # -----------------------------------
 
+failed_attempts_times = {}
 failed_attempts = {}
 unique_ips = set()
 successful_logins = {}
+printed_suspicious_users = set()
 
 # -----------------------------------
 # Read log file
@@ -87,7 +89,15 @@ with open(log_file, "r") as file:
         # -----------------------------------
 
         if "Failed password" in line:
+            # Extract timestamp
+            time = re.search(r"(\w{3} \d{1,2} \d{2}:\d{2}:\d{2})", line)
+            if time:
+                event_time = datetime.strptime(
+                    f"{datetime.now().year} {time.group(1)}",
+                    "%Y %b %d %H:%M:%S"
+                )
 
+            # Extract username and IP address
             username = re.search(r"for (\w+)", line)
             ip = re.search(r"from (\d+\.\d+\.\d+\.\d+)", line)
 
@@ -100,15 +110,17 @@ with open(log_file, "r") as file:
                 unique_ips.add(source_ip)
 
                 # Detect suspicious username
-                if username in suspicious_users:
-                    print(
-                        "⚠️ Suspicious username detected:",
-                        username
-                    )
+                if username in suspicious_users and username not in printed_suspicious_users:
+                    print("⚠️ Suspicious username detected:", username)
+                    printed_suspicious_users.add(username)
 
                 # Create IP dictionary
                 if source_ip not in failed_attempts:
                     failed_attempts[source_ip] = {}
+
+                # Create timestamp dictionary
+                if source_ip not in failed_attempts_times:
+                    failed_attempts_times[source_ip] = {}
 
                 # Count attempts
                 if username not in failed_attempts[source_ip]:
@@ -116,6 +128,10 @@ with open(log_file, "r") as file:
 
                 else:
                     failed_attempts[source_ip][username] += 1
+
+                if username not in failed_attempts_times[source_ip]:
+                    failed_attempts_times[source_ip][username] = []
+                failed_attempts_times[source_ip][username].append(event_time)
 
 
         # -----------------------------------
@@ -131,9 +147,10 @@ with open(log_file, "r") as file:
 
                 username = username.group(1)
                 source_ip = ip.group(1)
-
                 # Track unique IP
                 unique_ips.add(source_ip)
+                # Store successful login
+                successful_logins[source_ip] = username
 
                 print("\nSuccessful login detected:")
                 print("Source IP:", source_ip)
@@ -188,6 +205,48 @@ for ip, users in failed_attempts.items():
             severity
         )
 
+print("\n====== Time Window ======")
+for ip, users in failed_attempts_times.items():
+
+    for username, timestamps in users.items():
+
+        if len(timestamps) >= 2:
+
+            first_attempt = timestamps[0]
+            last_attempt = timestamps[-1]
+            time_difference = last_attempt - first_attempt
+            time_window = str(time_difference)
+
+            print("Source IP:", ip)
+            print("Target username:", username)
+            print("Failed attempts:", len(timestamps))
+            print("Time window:", time_window)
+            print ("Time span:", time_difference.total_seconds(), "seconds")
+            print("===============================")
+
+            if len(timestamps) >= 2 and time_difference.total_seconds() <= 60:
+                print("🚨 CRITICAL ALERT")
+                print("Possible brute-force attack detected!")
+                print("Source IP:", ip)
+                print("Target username:", username)
+                print("Failed attempts:", len(timestamps))
+                print("Time window:", time_window)
+                print ("Time span:", time_difference.total_seconds(), "seconds")
+                print("===============================")
+print("\n====== SUCCESS AFTER FAILED LOGINS ======")
+
+for ip, username in successful_logins.items():
+
+    failed_count = failed_attempts.get(ip, {}).get(username, 0)
+
+    if failed_count >= 3:
+
+        print("🚨 CRITICAL ALERT")
+        print("Possible brute-force attack followed by successful login!")
+        print("Source IP:", ip)
+        print("Target username:", username)
+        print("Failed attempts before success:", failed_count)
+        print("========================================")
 
 # -----------------------------------
 # SOC Summary
