@@ -1,6 +1,0 @@
-{"timestamp": "2026-08-13 15:58:14", "alert_type": "Possible brute-force attack", "severity": "HIGH", "source_ip": "192.168.1.50", "username": "admin", "failed_attempts": 5}
-{"timestamp": "2026-08-13 15:58:14", "alert_type": "Possible brute-force attack", "severity": "LOW", "source_ip": "10.0.0.25", "username": "root", "failed_attempts": 2}
-{"timestamp": "2026-08-16 14:25:00", "alert_type": "Possible brute-force attack", "severity": "HIGH", "source_ip": "192.168.1.50", "username": "admin", "failed_attempts": 5}
-{"timestamp": "2026-08-16 14:25:00", "alert_type": "Possible brute-force attack", "severity": "LOW", "source_ip": "10.0.0.25", "username": "root", "failed_attempts": 2}
-{"timestamp": "2026-08-16 14:27:12", "alert_type": "Possible brute-force attack", "severity": "HIGH", "source_ip": "192.168.1.50", "username": "admin", "failed_attempts": 5}
-{"timestamp": "2026-08-16 14:27:12", "alert_type": "Possible brute-force attack", "severity": "LOW", "source_ip": "10.0.0.25", "username": "root", "failed_attempts": 2}
