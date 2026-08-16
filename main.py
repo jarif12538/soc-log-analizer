@@ -3,6 +3,76 @@ from datetime import datetime
 import json
 
 
+def parse_log_line(line):
+
+    # Failed login
+    if "Failed password" in line:
+
+        time = re.search(
+            r"(\w{3} \d{1,2} \d{2}:\d{2}:\d{2})",
+            line
+        )
+
+        username = re.search(
+            r"for (\w+)",
+            line
+        )
+
+        ip = re.search(
+            r"from (\d+\.\d+\.\d+\.\d+)",
+            line
+        )
+
+        if time and username and ip:
+
+            event_time = datetime.strptime(
+                f"{datetime.now().year} {time.group(1)}",
+                "%Y %b %d %H:%M:%S"
+            )
+
+            return {
+                "event_type": "failed_login",
+                "timestamp": event_time,
+                "username": username.group(1),
+                "source_ip": ip.group(1)
+            }
+
+
+    # Successful login
+    if "Accepted password" in line:
+
+        time = re.search(
+            r"(\w{3} \d{1,2} \d{2}:\d{2}:\d{2})",
+            line
+        )
+
+        username = re.search(
+            r"for (\w+)",
+            line
+        )
+
+        ip = re.search(
+            r"from (\d+\.\d+\.\d+\.\d+)",
+            line
+        )
+
+        if time and username and ip:
+
+            event_time = datetime.strptime(
+                f"{datetime.now().year} {time.group(1)}",
+                "%Y %b %d %H:%M:%S"
+            )
+
+            return {
+                "event_type": "successful_login",
+                "timestamp": event_time,
+                "username": username.group(1),
+                "source_ip": ip.group(1)
+            }
+
+
+    return None
+
 # -----------------------------------
 # Alert function
 # -----------------------------------
@@ -84,90 +154,80 @@ with open(log_file, "r") as file:
 
     for line in file:
 
-        # -----------------------------------
-        # Failed login detection
-        # -----------------------------------
+        event = parse_log_line(line)
 
-        if "Failed password" in line:
-            # Extract timestamp
-            time = re.search(r"(\w{3} \d{1,2} \d{2}:\d{2}:\d{2})", line)
-            if time:
-                event_time = datetime.strptime(
-                    f"{datetime.now().year} {time.group(1)}",
-                    "%Y %b %d %H:%M:%S"
-                )
+        if event is None:
+            continue
 
-            # Extract username and IP address
-            username = re.search(r"for (\w+)", line)
-            ip = re.search(r"from (\d+\.\d+\.\d+\.\d+)", line)
+        username = event["username"]
+        source_ip = event["source_ip"]
 
-            if username and ip:
-
-                username = username.group(1)
-                source_ip = ip.group(1)
-
-                # Track unique IP
-                unique_ips.add(source_ip)
-
-                # Detect suspicious username
-                if username in suspicious_users and username not in printed_suspicious_users:
-                    print("⚠️ Suspicious username detected:", username)
-                    printed_suspicious_users.add(username)
-
-                # Create IP dictionary
-                if source_ip not in failed_attempts:
-                    failed_attempts[source_ip] = {}
-
-                # Create timestamp dictionary
-                if source_ip not in failed_attempts_times:
-                    failed_attempts_times[source_ip] = {}
-
-                # Count attempts
-                if username not in failed_attempts[source_ip]:
-                    failed_attempts[source_ip][username] = 1
-
-                else:
-                    failed_attempts[source_ip][username] += 1
-
-                if username not in failed_attempts_times[source_ip]:
-                    failed_attempts_times[source_ip][username] = []
-                failed_attempts_times[source_ip][username].append(event_time)
-
+        # Track unique IP
+        unique_ips.add(source_ip)
 
         # -----------------------------------
-        # Successful login detection
+        # Failed login
         # -----------------------------------
 
-        if "Accepted password" in line:
+        if event["event_type"] == "failed_login":
 
-            username = re.search(r"for (\w+)", line)
-            ip = re.search(r"from (\d+\.\d+\.\d+\.\d+)", line)
+            event_time = event["timestamp"]
 
-            if username and ip:
-
-                username = username.group(1)
-                source_ip = ip.group(1)
-                # Track unique IP
-                unique_ips.add(source_ip)
-                # Store successful login
-                successful_logins[source_ip] = username
-
-                print("\nSuccessful login detected:")
-                print("Source IP:", source_ip)
-                print("Target username:", username)
-
+            # Suspicious username detection
+            if (
+                username in suspicious_users
+                and username not in printed_suspicious_users
+            ):
                 print(
-                    "Failed attempts:",
-                    failed_attempts.get(
-                        source_ip,
-                        {}
-                    ).get(
-                        username,
-                        0
-                    )
+                    "⚠️ Suspicious username detected:",
+                    username
                 )
 
+                printed_suspicious_users.add(username)
 
+            # Create IP dictionary
+            if source_ip not in failed_attempts:
+                failed_attempts[source_ip] = {}
+
+            # Count attempts
+            if username not in failed_attempts[source_ip]:
+                failed_attempts[source_ip][username] = 1
+            else:
+                failed_attempts[source_ip][username] += 1
+
+            # Create timestamp dictionary
+            if source_ip not in failed_attempts_times:
+                failed_attempts_times[source_ip] = {}
+
+            if username not in failed_attempts_times[source_ip]:
+                failed_attempts_times[source_ip][username] = []
+
+            failed_attempts_times[source_ip][username].append(
+                event_time
+            )
+
+        # -----------------------------------
+        # Successful login
+        # -----------------------------------
+
+        elif event["event_type"] == "successful_login":
+
+            successful_logins[source_ip] = username
+
+            print("\nSuccessful login detected:")
+            print("Source IP:", source_ip)
+            print("Target username:", username)
+
+            print(
+                "Failed attempts:",
+                failed_attempts.get(
+                    source_ip,
+                    {}
+                ).get(
+                    username,
+                    0
+                )
+            )
 # -----------------------------------
 # Generate alerts
 # -----------------------------------

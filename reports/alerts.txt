@@ -18,3 +18,43 @@ Target username: root
 Failed attempts before success: 2
 ================================
 
+
+======== SECURITY ALERT ========
+Alert time: 2026-08-16 14:25:00
+Alert type: Possible brute-force attack
+Severity: HIGH
+Source IP: 192.168.1.50
+Target username: admin
+Failed attempts before success: 5
+================================
+
+
+======== SECURITY ALERT ========
+Alert time: 2026-08-16 14:25:00
+Alert type: Possible brute-force attack
+Severity: LOW
+Source IP: 10.0.0.25
+Target username: root
+Failed attempts before success: 2
+================================
+
+
+======== SECURITY ALERT ========
+Alert time: 2026-08-16 14:27:12
+Alert type: Possible brute-force attack
+Severity: HIGH
+Source IP: 192.168.1.50
+Target username: admin
+Failed attempts before success: 5
+================================
+
+
+======== SECURITY ALERT ========
+Alert time: 2026-08-16 14:27:12
+Alert type: Possible brute-force attack
+Severity: LOW
+Source IP: 10.0.0.25
+Target username: root
+Failed attempts before success: 2
+================================
+
