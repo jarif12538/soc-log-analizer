@@ -1,10 +1,7 @@
 import json
 from datetime import datetime
 
-
-# -----------------------------------
 # Save and display normal alert
-# -----------------------------------
 
 def show_alert(
     ip,
@@ -13,11 +10,9 @@ def show_alert(
     severity,
     alert_type="Possible brute-force attack"
 ):
-
     alert_time = datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S"
     )
-
     alert = {
         "timestamp": alert_time,
         "alert_type": alert_type,
@@ -26,10 +21,7 @@ def show_alert(
         "username": username,
         "failed_attempts": count
     }
-
-    # -----------------------------------
     # Display alert
-    # -----------------------------------
 
     print("\n======== SECURITY ALERT ========")
 
@@ -67,10 +59,7 @@ def show_alert(
         "================================"
     )
 
-
-    # -----------------------------------
     # Save JSON alert
-    # -----------------------------------
 
     with open(
         "reports/alerts.json",
@@ -81,10 +70,7 @@ def show_alert(
             json.dumps(alert) + "\n"
         )
 
-
-    # -----------------------------------
     # Save text alert
-    # -----------------------------------
 
     with open(
         "reports/alerts.txt",
@@ -123,10 +109,7 @@ def show_alert(
             "================================\n"
         )
 
-
-# -----------------------------------
 # Critical brute-force alert
-# -----------------------------------
 
 def show_critical_bruteforce_alert(
     ip,
@@ -165,10 +148,7 @@ def show_critical_bruteforce_alert(
         "================================"
     )
 
-
-# -----------------------------------
 # Successful login after failures
-# -----------------------------------
 
 def show_success_after_failed_alert(
     ip,
